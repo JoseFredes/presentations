@@ -17,6 +17,7 @@
             <button id="aiTextBtn">Generate Text</button>
             <button id="aiCodeBtn">Generate Code</button>
             <button id="dynamicSlideBtn">Dynamic Slide</button>
+            <button id="aiPresentationBtn">AI Presentation</button>
         </div>
         
         <div class="main-content">
@@ -191,6 +192,78 @@
                 <div class="modal-buttons">
                     <button id="createDynamicSlideBtn">Create Dynamic Slide</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="aiPresentationModal" class="ai-modal">
+        <div class="ai-modal-content">
+            <span class="close-modal" id="closeAiPresentationModal">&times;</span>
+            <h2>Generate Presentation with AI</h2>
+            <div class="ai-form">
+                <label for="presentationApiKeyInput">OpenAI API Key:</label>
+                <input type="password" id="presentationApiKeyInput" placeholder="Enter your OpenAI API key">
+                
+                <label for="presentationTopicInput">Presentation Topic/Title:</label>
+                <input type="text" id="presentationTopicInput" placeholder="Enter the main topic or title">
+                
+                <label for="presentationDescriptionInput">Additional Details (optional):</label>
+                <textarea id="presentationDescriptionInput" placeholder="Enter any additional details, requirements, or context for the presentation..."></textarea>
+                
+                <div class="presentation-options">
+                    <h3>Generation Options</h3>
+                    
+                    <div class="option-group">
+                        <label for="slidesCountInput">Number of Slides:</label>
+                        <select id="slidesCountInput">
+                            <option value="3">3 slides</option>
+                            <option value="5" selected>5 slides</option>
+                            <option value="7">7 slides</option>
+                            <option value="10">10 slides</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="number" id="customSlidesCount" min="1" max="20" value="5" style="display:none;">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="presentationStyleInput">Presentation Style:</label>
+                        <select id="presentationStyleInput">
+                            <option value="informative">Informative</option>
+                            <option value="persuasive">Persuasive</option>
+                            <option value="educational">Educational</option>
+                            <option value="business">Business/Professional</option>
+                            <option value="creative">Creative/Visually focused</option>
+                        </select>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="contentBalanceInput">Content Balance:</label>
+                        <select id="contentBalanceInput">
+                            <option value="text-heavy">Text-heavy</option>
+                            <option value="balanced" selected>Balanced</option>
+                            <option value="visual">Visual-focused</option>
+                        </select>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label>Include:</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="includeTitle" checked> Title Slide</label>
+                            <label><input type="checkbox" id="includeSummary" checked> Summary/Conclusion</label>
+                            <label><input type="checkbox" id="includeCode"> Code Examples</label>
+                            <label><input type="checkbox" id="includeImages"> Image Placeholders</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="generatePresentationBtn">Generate Presentation</button>
+            </div>
+            <div id="presentationGenerationStatus" class="generation-status"></div>
+            <div id="generationProgress" class="generation-progress" style="display:none;">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" style="width: 0%"></div>
+                </div>
+                <p class="progress-text">Generating slide 0 of 0...</p>
             </div>
         </div>
     </div>
