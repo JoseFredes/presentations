@@ -478,4 +478,51 @@ body {
     padding: 5px 10px;
     border-radius: 4px;
     cursor: pointer;
+}
+
+/* AI Presentation Generation styles */
+.presentation-options {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.option-group {
+    margin-bottom: 15px;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.generation-progress {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: #ddd;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: #0066cc;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
 } 
