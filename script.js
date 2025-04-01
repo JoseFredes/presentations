@@ -44,7 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
         addVariablePairBtn: document.getElementById('addVariablePairBtn'),
         refreshPreviewBtn: document.getElementById('refreshPreviewBtn'),
         previewContainer: document.getElementById('previewContainer'),
-        createDynamicSlideBtn: document.getElementById('createDynamicSlideBtn')
+        createDynamicSlideBtn: document.getElementById('createDynamicSlideBtn'),
+        aiPresentationBtn: document.getElementById('aiPresentationBtn'),
+        aiPresentationModal: document.getElementById('aiPresentationModal'),
+        closeAiPresentationModal: document.getElementById('closeAiPresentationModal'),
+        presentationApiKeyInput: document.getElementById('presentationApiKeyInput'),
+        presentationTopicInput: document.getElementById('presentationTopicInput'),
+        presentationDescriptionInput: document.getElementById('presentationDescriptionInput'),
+        slidesCountInput: document.getElementById('slidesCountInput'),
+        customSlidesCount: document.getElementById('customSlidesCount'),
+        presentationStyleInput: document.getElementById('presentationStyleInput'),
+        contentBalanceInput: document.getElementById('contentBalanceInput'),
+        includeTitle: document.getElementById('includeTitle'),
+        includeSummary: document.getElementById('includeSummary'),
+        includeCode: document.getElementById('includeCode'),
+        includeImages: document.getElementById('includeImages'),
+        generatePresentationBtn: document.getElementById('generatePresentationBtn'),
+        presentationGenerationStatus: document.getElementById('presentationGenerationStatus'),
+        generationProgress: document.getElementById('generationProgress'),
+        progressBarFill: document.querySelector('.progress-bar-fill'),
+        progressText: document.querySelector('.progress-text')
     };
 
     // Current AI generation context
@@ -82,6 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.addVariablePairBtn.addEventListener('click', addVariablePair);
         elements.refreshPreviewBtn.addEventListener('click', updatePreview);
         elements.createDynamicSlideBtn.addEventListener('click', createDynamicSlide);
+        elements.aiPresentationBtn.addEventListener('click', openAiPresentationModal);
+        elements.closeAiPresentationModal.addEventListener('click', closeAiPresentationModal);
+        elements.generatePresentationBtn.addEventListener('click', generateAiPresentation);
+        elements.slidesCountInput.addEventListener('change', toggleCustomSlidesCount);
 
         // Keyboard shortcuts for presentation mode
         document.addEventListener('keydown', (e) => {
@@ -1060,4 +1083,292 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         functionCode: 'return {\n  title: "Dynamic Title",\n  items: ["Item 1", "Item 2"],\n  value: Math.random() * 100\n};'
     };
+
+    function openAiPresentationModal() {
+        // Synchronize API keys
+        elements.presentationApiKeyInput.value = elements.apiKeyInput.value || localStorage.getItem('openai_api_key') || '';
+        
+        // Show the modal
+        elements.aiPresentationModal.style.display = 'block';
+    }
+
+    function closeAiPresentationModal() {
+        elements.aiPresentationModal.style.display = 'none';
+        elements.presentationGenerationStatus.className = 'generation-status';
+        elements.presentationGenerationStatus.style.display = 'none';
+        elements.presentationGenerationStatus.textContent = '';
+        elements.generationProgress.style.display = 'none';
+    }
+
+    function toggleCustomSlidesCount() {
+        if (elements.slidesCountInput.value === 'custom') {
+            elements.customSlidesCount.style.display = 'inline-block';
+        } else {
+            elements.customSlidesCount.style.display = 'none';
+        }
+    }
+
+    function showPresentationGenerationStatus(message, type) {
+        elements.presentationGenerationStatus.textContent = message;
+        elements.presentationGenerationStatus.className = `generation-status ${type}`;
+        elements.presentationGenerationStatus.style.display = 'block';
+    }
+
+    function updateProgressBar(current, total) {
+        const percentage = (current / total) * 100;
+        elements.progressBarFill.style.width = `${percentage}%`;
+        elements.progressText.textContent = `Generating slide ${current} of ${total}...`;
+    }
+
+    async function generateAiPresentation() {
+        const apiKey = elements.presentationApiKeyInput.value.trim();
+        const topic = elements.presentationTopicInput.value.trim();
+        
+        if (!apiKey) {
+            showPresentationGenerationStatus('Please enter your OpenAI API key', 'error');
+            return;
+        }
+        
+        if (!topic) {
+            showPresentationGenerationStatus('Please enter a presentation topic', 'error');
+            return;
+        }
+        
+        // Save API key and synchronize it with the other modal's input
+        localStorage.setItem('openai_api_key', apiKey);
+        elements.apiKeyInput.value = apiKey;
+        
+        // Get presentation parameters
+        let slidesCount = parseInt(elements.slidesCountInput.value);
+        if (elements.slidesCountInput.value === 'custom') {
+            slidesCount = parseInt(elements.customSlidesCount.value);
+            if (isNaN(slidesCount) || slidesCount < 1 || slidesCount > 20) {
+                showPresentationGenerationStatus('Please enter a valid number of slides (1-20)', 'error');
+                return;
+            }
+        }
+        
+        const style = elements.presentationStyleInput.value;
+        const contentBalance = elements.contentBalanceInput.value;
+        const includeTitle = elements.includeTitle.checked;
+        const includeSummary = elements.includeSummary.checked;
+        const includeCode = elements.includeCode.checked;
+        const includeImages = elements.includeImages.checked;
+        const description = elements.presentationDescriptionInput.value.trim();
+        
+        // Show loading message and initialize progress bar
+        showPresentationGenerationStatus('Planning your presentation...', 'loading');
+        elements.generationProgress.style.display = 'block';
+        elements.progressBarFill.style.width = '0%';
+        elements.progressText.textContent = 'Creating presentation outline...';
+        
+        try {
+            // First, generate an outline for the presentation
+            const outlineResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'You are a professional presentation designer. You will create an outline for a presentation based on the user\'s requirements. Focus on creating a clear, well-structured presentation.'
+                        },
+                        {
+                            role: 'user',
+                            content: `Create an outline for a ${slidesCount}-slide presentation on "${topic}".
+                            
+Style: ${style}
+Content balance: ${contentBalance}
+Additional description: ${description}
+
+${includeTitle ? 'Include a title slide.' : ''}
+${includeSummary ? 'Include a summary/conclusion slide.' : ''}
+${includeCode ? 'Include code examples where appropriate.' : ''}
+${includeImages ? 'Suggest image concepts where appropriate.' : ''}
+
+Create an outline with a title and brief content description for each slide. Format your response as JSON with the following structure:
+{
+  "title": "Main Presentation Title",
+  "slides": [
+    {
+      "title": "Slide 1 Title",
+      "type": "title|content|code|image|summary",
+      "content": "Brief description of what should be in this slide"
+    },
+    ...
+  ]
+}`
+                        }
+                    ],
+                    temperature: 0.7
+                })
+            });
+            
+            if (!outlineResponse.ok) {
+                const error = await outlineResponse.json();
+                throw new Error(error.error.message || 'Error connecting to OpenAI API');
+            }
+            
+            const outlineData = await outlineResponse.json();
+            let outlineText = outlineData.choices[0].message.content.trim();
+            
+            // Extract JSON from the response
+            const jsonMatch = outlineText.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error('Could not parse outline response from AI');
+            }
+            
+            const outlineJson = JSON.parse(jsonMatch[0]);
+            showPresentationGenerationStatus('Creating slides based on outline...', 'loading');
+            
+            // Clear existing slides if any
+            while (state.slides.length > 0) {
+                state.slides.pop();
+            }
+            
+            // Generate each slide
+            for (let i = 0; i < outlineJson.slides.length; i++) {
+                const slideOutline = outlineJson.slides[i];
+                updateProgressBar(i + 1, outlineJson.slides.length);
+                
+                // Create a new slide
+                const newSlide = {
+                    id: Date.now() + i,
+                    content: []
+                };
+                
+                // Generate content for this slide
+                const slideContent = await generateSlideContent(apiKey, topic, slideOutline, style, includeCode, includeImages);
+                
+                // Add title block
+                const titleBlock = {
+                    id: Date.now() + i * 100,
+                    type: 'text',
+                    content: `<h2>${slideOutline.title}</h2>`
+                };
+                newSlide.content.push(titleBlock);
+                
+                // Add main content blocks
+                if (slideContent.mainText) {
+                    const textBlock = {
+                        id: Date.now() + i * 100 + 1,
+                        type: 'text',
+                        content: slideContent.mainText
+                    };
+                    newSlide.content.push(textBlock);
+                }
+                
+                // Add code block if present
+                if (slideContent.code) {
+                    const codeBlock = {
+                        id: Date.now() + i * 100 + 2,
+                        type: 'code',
+                        language: slideContent.codeLanguage || 'javascript',
+                        content: slideContent.code
+                    };
+                    newSlide.content.push(codeBlock);
+                }
+                
+                // Add the slide to the presentation
+                state.slides.push(newSlide);
+            }
+            
+            // Set the current slide to the first one
+            state.currentSlideIndex = 0;
+            renderSlides();
+            
+            // Show success message
+            showPresentationGenerationStatus('Presentation generated successfully!', 'success');
+            setTimeout(() => {
+                closeAiPresentationModal();
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Error generating presentation:', error);
+            showPresentationGenerationStatus(`Error: ${error.message}`, 'error');
+            elements.generationProgress.style.display = 'none';
+        }
+    }
+
+    async function generateSlideContent(apiKey, topic, slideOutline, style, includeCode, includeImages) {
+        // Generate detailed content for a single slide
+        const slideType = slideOutline.type || 'content';
+        const slideTitle = slideOutline.title;
+        const slideContentDesc = slideOutline.content;
+        
+        const slideResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a professional presentation content creator. Create detailed slide content based on the outline.'
+                    },
+                    {
+                        role: 'user',
+                        content: `Create detailed content for a slide in a ${style} presentation about "${topic}".
+
+Slide title: "${slideTitle}"
+Slide type: ${slideType}
+Content description: ${slideContentDesc}
+
+${slideType === 'code' || includeCode && slideContentDesc.toLowerCase().includes('code') ? 
+  'Include appropriate code examples. Format code examples so they can be used directly in a presentation.' : ''}
+${includeImages && (slideType === 'image' || slideContentDesc.toLowerCase().includes('image')) ? 
+  'Suggest image concepts where appropriate.' : ''}
+
+Format your response as JSON with the following structure:
+{
+  "mainText": "The main text content with HTML formatting (paragraphs, lists, etc.)",
+  "code": "Include any code examples here or null if none",
+  "codeLanguage": "The programming language of the code or null",
+  "imageDescriptions": ["Short description of suggested images or empty array"]
+}`
+                    }
+                ],
+                temperature: 0.7
+            })
+        });
+        
+        if (!slideResponse.ok) {
+            const error = await slideResponse.json();
+            throw new Error(error.error.message || 'Error generating slide content');
+        }
+        
+        const slideData = await slideResponse.json();
+        let slideResponseText = slideData.choices[0].message.content.trim();
+        
+        // Extract JSON from the response
+        const jsonMatch = slideResponseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            // If we can't parse JSON, just use the text as-is
+            return {
+                mainText: slideResponseText,
+                code: null,
+                codeLanguage: null,
+                imageDescriptions: []
+            };
+        }
+        
+        try {
+            return JSON.parse(jsonMatch[0]);
+        } catch (e) {
+            // If JSON parsing fails, use the text as-is
+            return {
+                mainText: slideResponseText,
+                code: null,
+                codeLanguage: null,
+                imageDescriptions: []
+            };
+        }
+    }
 }); 
