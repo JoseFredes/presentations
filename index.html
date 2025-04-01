@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Slides App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="toolbar">
+            <button id="newSlideBtn">New Slide</button>
+            <button id="presentBtn">Present</button>
+            <button id="codeBtn">Add Code</button>
+            <button id="textBtn">Add Text</button>
+            <button id="imageBtn">Add Image</button>
+            <button id="aiTextBtn">Generate Text</button>
+            <button id="aiCodeBtn">Generate Code</button>
+            <button id="dynamicSlideBtn">Dynamic Slide</button>
+        </div>
+        
+        <div class="main-content">
+            <div class="slides-sidebar" id="slidesSidebar">
+                <!-- Slide thumbnails will be added here -->
+            </div>
+            
+            <div class="slide-editor" id="slideEditor">
+                <div class="current-slide" id="currentSlide">
+                    <!-- Active slide content here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="presentation-mode" id="presentationMode">
+            <div class="presentation-slide" id="presentationSlide"></div>
+            <div class="presentation-controls">
+                <button id="prevSlideBtn">Previous</button>
+                <span id="slideCounter">1/1</span>
+                <button id="nextSlideBtn">Next</button>
+                <button id="exitPresentBtn">Exit</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Templates for adding content -->
+    <template id="codeBlockTemplate">
+        <div class="content-block code-block">
+            <div class="block-controls">
+                <button class="delete-block-btn">Delete</button>
+            </div>
+            <div class="code-header">
+                <select class="language-select">
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                </select>
+            </div>
+            <textarea class="code-content" placeholder="Enter your code here..."></textarea>
+        </div>
+    </template>
+    
+    <template id="textBlockTemplate">
+        <div class="content-block text-block">
+            <div class="block-controls">
+                <button class="delete-block-btn">Delete</button>
+            </div>
+            <textarea class="text-content" placeholder="Enter your text here..."></textarea>
+        </div>
+    </template>
+    
+    <template id="imageBlockTemplate">
+        <div class="content-block image-block">
+            <div class="block-controls">
+                <button class="delete-block-btn">Delete</button>
+            </div>
+            <input type="file" class="image-upload" accept="image/*">
+            <div class="image-preview"></div>
+        </div>
+    </template>
+    
+    <div id="aiModal" class="ai-modal">
+        <div class="ai-modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="aiModalTitle">Generate with AI</h2>
+            <div class="ai-form">
+                <label for="apiKeyInput">OpenAI API Key:</label>
+                <input type="password" id="apiKeyInput" placeholder="Enter your OpenAI API key">
+                <label for="promptInput">Prompt:</label>
+                <textarea id="promptInput" placeholder="Enter your prompt for the AI..."></textarea>
+                <div class="ai-options" id="aiOptions">
+                    <!-- Dynamic options will appear here based on generation type -->
+                </div>
+                <button id="generateBtn">Generate</button>
+            </div>
+            <div id="generationStatus" class="generation-status"></div>
+        </div>
+    </div>
+    
+    <div id="dynamicSlideModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeDynamicModal">&times;</span>
+            <h2>Create Dynamic Slide</h2>
+            <div class="dynamic-slide-form">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="template">Template</button>
+                    <button class="tab-btn" data-tab="data">Data Source</button>
+                    <button class="tab-btn" data-tab="preview">Preview</button>
+                </div>
+                
+                <div class="tab-content active" data-tab="template">
+                    <p>Create a template using placeholders like {{variable}}</p>
+                    <textarea id="templateContent" placeholder="Enter your template content here..."></textarea>
+                    <div class="template-tools">
+                        <button id="addVariableBtn">Add Variable</button>
+                        <select id="templatePartSelect">
+                            <option value="">Add Template Part...</option>
+                            <option value="title">Title</option>
+                            <option value="bullet">Bullet Points</option>
+                            <option value="chart">Chart</option>
+                            <option value="table">Table</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="tab-content" data-tab="data">
+                    <div class="data-source-selector">
+                        <label>
+                            <input type="radio" name="dataSource" value="manual" checked> Manual Data
+                        </label>
+                        <label>
+                            <input type="radio" name="dataSource" value="api"> API Endpoint
+                        </label>
+                        <label>
+                            <input type="radio" name="dataSource" value="function"> JavaScript Function
+                        </label>
+                    </div>
+                    
+                    <div class="data-source-config" id="manualDataConfig">
+                        <h3>Enter Variables and Values</h3>
+                        <div id="variablesContainer">
+                            <!-- Variables will be added here -->
+                        </div>
+                        <button id="addVariablePairBtn">+ Add Variable</button>
+                    </div>
+                    
+                    <div class="data-source-config" id="apiConfig" style="display:none;">
+                        <h3>API Configuration</h3>
+                        <label for="apiUrl">API URL:</label>
+                        <input type="text" id="apiUrl" placeholder="https://api.example.com/data">
+                        
+                        <label for="apiDataPath">JSON Path to Data:</label>
+                        <input type="text" id="apiDataPath" placeholder="data.items">
+                        
+                        <div class="update-config">
+                            <h4>Update Frequency</h4>
+                            <select id="updateFrequency">
+                                <option value="manual">Manual Update</option>
+                                <option value="presentation">On Presentation Start</option>
+                                <option value="slide">On Slide Show</option>
+                                <option value="interval">At Intervals</option>
+                            </select>
+                            
+                            <div id="intervalConfig" style="display:none;">
+                                <label for="updateInterval">Interval (seconds):</label>
+                                <input type="number" id="updateInterval" min="5" value="30">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="data-source-config" id="functionConfig" style="display:none;">
+                        <h3>JavaScript Function</h3>
+                        <p>Define a function that returns an object with your variables</p>
+                        <textarea id="dataFunction" placeholder="return {
+  title: 'Dynamic Title',
+  items: ['Item 1', 'Item 2', 'Item 3'],
+  value: Math.random() * 100
+}"></textarea>
+                    </div>
+                </div>
+                
+                <div class="tab-content" data-tab="preview">
+                    <div class="preview-controls">
+                        <button id="refreshPreviewBtn">Refresh Preview</button>
+                    </div>
+                    <div class="preview-container" id="previewContainer">
+                        <!-- Preview will be shown here -->
+                    </div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button id="createDynamicSlideBtn">Create Dynamic Slide</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
